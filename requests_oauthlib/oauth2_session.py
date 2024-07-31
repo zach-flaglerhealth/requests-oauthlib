@@ -46,7 +46,7 @@ class OAuth2Session(requests.Session):
         state=None,
         token_updater=None,
         pkce=None,
-        **kwargs
+        **kwargs,
     ):
         """Construct a new OAuth 2 client session.
 
@@ -91,7 +91,9 @@ class OAuth2Session(requests.Session):
         self._pkce = pkce
 
         if self._pkce not in ["S256", "plain", None]:
-            raise AttributeError("Wrong value for {}(.., pkce={})".format(self.__class__, self._pkce))
+            raise AttributeError(
+                "Wrong value for {}(.., pkce={})".format(self.__class__, self._pkce)
+            )
 
         # Ensure that requests doesn't do any automatic auth. See #278.
         # The default behavior can be re-enabled by setting auth to None.
@@ -189,8 +191,7 @@ class OAuth2Session(requests.Session):
             self._code_verifier = self._client.create_code_verifier(43)
             kwargs["code_challenge_method"] = self._pkce
             kwargs["code_challenge"] = self._client.create_code_challenge(
-                code_verifier=self._code_verifier,
-                code_challenge_method=self._pkce
+                code_verifier=self._code_verifier, code_challenge_method=self._pkce
             )
         return (
             self._client.prepare_request_uri(
@@ -198,7 +199,7 @@ class OAuth2Session(requests.Session):
                 redirect_uri=self.redirect_uri,
                 scope=self.scope,
                 state=state,
-                **kwargs
+                **kwargs,
             ),
             state,
         )
@@ -221,7 +222,7 @@ class OAuth2Session(requests.Session):
         include_client_id=None,
         client_secret=None,
         cert=None,
-        **kwargs
+        **kwargs,
     ):
         """Generic method for fetching an access token from the token endpoint.
 
@@ -358,7 +359,7 @@ class OAuth2Session(requests.Session):
             body=body,
             redirect_uri=self.redirect_uri,
             include_client_id=include_client_id,
-            **kwargs
+            **kwargs,
         )
 
         headers = headers or {
@@ -391,7 +392,7 @@ class OAuth2Session(requests.Session):
             verify=verify,
             proxies=proxies,
             cert=cert,
-            **request_kwargs
+            **request_kwargs,
         )
 
         log.debug("Request to fetch token completed with status %s.", r.status_code)
@@ -434,7 +435,7 @@ class OAuth2Session(requests.Session):
         headers=None,
         verify=None,
         proxies=None,
-        **kwargs
+        **kwargs,
     ):
         """Fetch a new access token using a refresh token.
 
@@ -505,9 +506,7 @@ class OAuth2Session(requests.Session):
 
     def update_token(self, auth=None, **kwargs):
         if self.auto_refresh_type == "refresh_token":
-            return self.refresh_token(
-                self.auto_refresh_url, auth=auth, **kwargs
-            )
+            return self.refresh_token(self.auto_refresh_url, auth=auth, **kwargs)
 
         if self.auto_refresh_type == "access_token":
             return self.fetch_token(
@@ -527,7 +526,7 @@ class OAuth2Session(requests.Session):
         client_id=None,
         client_secret=None,
         files=None,
-        **kwargs
+        **kwargs,
     ):
         """Intercept all requests and add the OAuth 2 token if present."""
         if not is_secure_transport(url):
@@ -571,8 +570,10 @@ class OAuth2Session(requests.Session):
                         url, headers, data = self._client.add_token(
                             url, http_method=method, body=data, headers=headers
                         )
-                    else:
-                        raise TokenUpdated(token)
+                    log.debug("Adding new token %s to request.", self.token)
+                    url, headers, data = self._client.add_token(
+                        url, http_method=method, body=data, headers=headers
+                    )
                 else:
                     raise
 
